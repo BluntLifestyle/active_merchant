@@ -212,6 +212,7 @@ module ActiveMerchant #:nodoc:
         }
 
         post[:recurring] = recurring
+        post[:recurringProcessingModel] = options[:recurring_processing_model]
       end
 
       def add_installments(post, options)
