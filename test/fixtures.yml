@@ -36,6 +36,19 @@ axcessms:
 balanced:
   login: 'e1c5ad38d1c711e1b36c026ba7e239a9'
 
+bambora:
+  login: merchant id
+  user: username
+  password: password
+  secure_profile_api_key: API Access Passcode
+  recurring_api_key: API Access Passcode
+  api_key: API KEY
+
+bambora_interac:
+  login: merchant id
+  user: username
+  password: password
+
 # Bank Frick doesn't provide public testing data
 bank_frick:
   sender: sender-uuid
