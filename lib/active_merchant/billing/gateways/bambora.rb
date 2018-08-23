@@ -66,7 +66,7 @@ module ActiveMerchant #:nodoc:
         if response.is_a?(ErrorResponse)
           return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
       end
 
@@ -112,7 +112,7 @@ module ActiveMerchant #:nodoc:
         if response.is_a?(ErrorResponse)
           return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
       end
 
@@ -126,7 +126,7 @@ module ActiveMerchant #:nodoc:
         if response.is_a?(ErrorResponse)
           return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
       end
 
@@ -140,21 +140,20 @@ module ActiveMerchant #:nodoc:
         if response.is_a?(ErrorResponse)
           return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
       end
 
       def void(authorization, options={})
         h = {
-          order_number: options[:order_id],
-          amount: money * 100
+          order_number: options[:order_id]
         }
 
         response = Payment.void(h)
         if response.is_a?(ErrorResponse)
           return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
       end
 
@@ -166,7 +165,7 @@ module ActiveMerchant #:nodoc:
       end
 
       def supports_scrubbing?
-        true
+        false
       end
 
       def scrub(transcript)
