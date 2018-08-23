@@ -29,7 +29,7 @@ module ActiveMerchant #:nodoc:
           order_number: options[:order_id],
           amount: money * 100,
           payment_method: :card,
-          customer_id: options[:ip],
+          customer_ip: options[:ip],
           card: {
             name: payment.name,
             number: payment.number,
@@ -64,9 +64,9 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.create(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, {}, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, {}, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.message })
         end
       end
 
@@ -75,7 +75,7 @@ module ActiveMerchant #:nodoc:
           order_number: options[:order_id],
           amount: money * 100,
           payment_method: :card,
-          customer_id: options[:ip],
+          customer_ip: options[:ip],
           card: {
             name: payment.name,
             number: payment.number,
@@ -110,9 +110,9 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.preauth(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, {}, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, {}, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.message })
         end
       end
 
@@ -124,9 +124,9 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.complete(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, {}, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, {}, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.message })
         end
       end
 
@@ -136,16 +136,26 @@ module ActiveMerchant #:nodoc:
           amount: money * 100
         }
 
-        response = Payment.complete(h)
+        response = Payment.return(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, {}, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: response.code })
         else
-          return Response.new(true, response.message, {}, { authorization: response.message })
+          return Response.new(true, response.message, response.to_h, { authorization: response.message })
         end
       end
 
       def void(authorization, options={})
+        h = {
+          order_number: options[:order_id],
+          amount: money * 100
+        }
 
+        response = Payment.void(h)
+        if response.is_a?(ErrorResponse)
+          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+        else
+          return Response.new(true, response.message, response.to_h, { authorization: response.message })
+        end
       end
 
       def verify(credit_card, options={})
@@ -165,57 +175,22 @@ module ActiveMerchant #:nodoc:
 
       private
 
-      def add_customer_data(post, options)
-      end
+      # def commit(action, parameters)
+      #   url = (test? ? test_url : live_url)
+      #   response = parse(ssl_post(url, post_data(action, parameters)))
+      #
+      #   Response.new(
+      #     success_from(response),
+      #     message_from(response),
+      #     response,
+      #     authorization: authorization_from(response),
+      #     avs_result: AVSResult.new(code: response["some_avs_response_key"]),
+      #     cvv_result: CVVResult.new(response["some_cvv_response_key"]),
+      #     test: test?,
+      #     error_code: error_code_from(response)
+      #   )
+      # end
 
-      def add_address(post, creditcard, options)
-      end
-
-      def add_invoice(post, money, options)
-        post[:amount] = amount(money)
-        post[:currency] = (options[:currency] || currency(money))
-      end
-
-      def add_payment(post, payment)
-      end
-
-      def parse(body)
-        {}
-      end
-
-      def commit(action, parameters)
-        url = (test? ? test_url : live_url)
-        response = parse(ssl_post(url, post_data(action, parameters)))
-
-        Response.new(
-          success_from(response),
-          message_from(response),
-          response,
-          authorization: authorization_from(response),
-          avs_result: AVSResult.new(code: response["some_avs_response_key"]),
-          cvv_result: CVVResult.new(response["some_cvv_response_key"]),
-          test: test?,
-          error_code: error_code_from(response)
-        )
-      end
-
-      def success_from(response)
-      end
-
-      def message_from(response)
-      end
-
-      def authorization_from(response)
-      end
-
-      def post_data(action, parameters = {})
-      end
-
-      def error_code_from(response)
-        unless success_from(response)
-          # TODO: lookup error code for this response
-        end
-      end
     end
   end
 end

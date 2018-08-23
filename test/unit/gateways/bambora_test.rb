@@ -26,16 +26,13 @@ class BamboraTest < Test::Unit::TestCase
 
   def test_successful_purchase
     Bambora::API::Payment.expects(:create).returns(successful_purchase_response)
-
     response = @gateway.purchase(@amount, @credit_card, @options)
     assert_success response
-
     assert_equal 'Approved', response.authorization
   end
 
   def test_failed_purchase
     Bambora::API::Payment.expects(:create).returns(failed_purchase_response)
-
     response = @gateway.purchase(@amount, @credit_card, @options)
     assert_failure response
     assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
@@ -43,16 +40,13 @@ class BamboraTest < Test::Unit::TestCase
 
   def test_successful_authorize
     Bambora::API::Payment.expects(:preauth).returns(successful_authorize_response)
-
     response = @gateway.purchase(@amount, @credit_card, @options)
     assert_success response
-
     assert_equal 'Approved', response.authorization
   end
 
   def test_failed_authorize
     Bambora::API::Payment.expects(:preauth).returns(failed_authorize_response)
-
     response = @gateway.purchase(@amount, @credit_card, @options)
     assert_failure response
     assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
@@ -60,38 +54,50 @@ class BamboraTest < Test::Unit::TestCase
 
   def test_successful_capture
     Bambora::API::Payment.expects(:preauth).returns(successful_authorize_response)
-
-    response = @gateway.purchase(@amount, @credit_card, @options)
+    response = @gateway.authorize(@amount, @credit_card, @options)
     assert_success response
-
     assert_equal 'Approved', response.authorization
 
-    Bambora::API::Payment.expects(:complete).returns(successful_complete_response)
-
-    response = @gateway.purchase(@amount, @credit_card, @options)
+    Bambora::API::Payment.expects(:complete).returns(successful_capture_response)
+    response = @gateway.capture(@amount, @credit_card, @options)
     assert_success response
-
     assert_equal 'Approved', response.authorization
   end
 
   def test_failed_capture
-    Bambora::API::Payment.expects(:preauth).returns(failed_authorize_response)
-
-    response = @gateway.purchase(@amount, @credit_card, @options)
-    assert_failure response
-    assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
+    Bambora::API::Payment.expects(:preauth).returns(successful_authorize_response)
+    response = @gateway.authorize(@amount, @credit_card, @options)
+    assert_success response
+    assert_equal 'Approved', response.authorization
 
     Bambora::API::Payment.expects(:complete).returns(failed_capture_response)
-
-    response = @gateway.purchase(@amount, @credit_card, @options)
+    response = @gateway.capture(@amount, @credit_card, @options)
     assert_failure response
     assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
   end
 
   def test_successful_refund
+    Bambora::API::Payment.expects(:create).returns(successful_purchase_response)
+    response = @gateway.purchase(@amount, @credit_card, @options)
+    assert_success response
+    assert_equal 'Approved', response.authorization
+
+    Bambora::API::Payment.expects(:return).returns(successful_refund_response)
+    response = @gateway.refund(@amount, @credit_card, @options)
+    assert_success response
+    assert_equal 'Approved', response.authorization
   end
 
   def test_failed_refund
+    Bambora::API::Payment.expects(:create).returns(successful_purchase_response)
+    response = @gateway.purchase(@amount, @credit_card, @options)
+    assert_success response
+    assert_equal 'Approved', response.authorization
+
+    Bambora::API::Payment.expects(:return).returns(failed_refund_response)
+    response = @gateway.refund(@amount, @credit_card, @options)
+    assert_failure response
+    assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
   end
 
   def test_successful_void
@@ -133,36 +139,74 @@ class BamboraTest < Test::Unit::TestCase
   end
 
   def successful_purchase_response
-    Response.new(true, 'Approved', params: {}, options: { authorization: 'Approved', test: true })
+    Bambora::API::PaymentResponse.new(
+      JSON.parse(
+        '{"id":"10000021","authorizing_merchant_id":300205948,"approved":"1","message_id":"1","message":"Approved","auth_code":"TEST","created":"2018-08-13T15:49:35","order_number":"7113128616","type":"P","payment_method":"CC","risk_score":0.0,"amount":79.76,"custom":{"ref1":"","ref2":"","ref3":"","ref4":"","ref5":""},"card":{"card_type":"VI","last_four":"2333","address_match":1,"postal_result":1,"avs_result":"1","cvd_result":"1","avs":{"id":"Y","message":"Street address and Postal/ZIP match.","processed":true}},"links":[{"rel":"void","href":"https://api.na.bambora.com/v1/payments/10000021/void","method":"POST"},{"rel":"return","href":"https://api.na.bambora.com/v1/payments/10000021/returns","method":"POST"}]}'
+      )
+    )
   end
 
   def failed_purchase_response
-    Response.new(false, 'Decline', params: {}, options: { error_code: '217', test: true})
+    Bambora::API::ErrorResponse.new(
+      JSON.parse(
+        '{"code":7,"category":1,"message":"DECLINE","reference":""}'
+      )
+    )
   end
 
   def successful_authorize_response
-    Response.new(true, 'Approved', params: {}, options: { authorization: 'Approved', test: true })
+    Bambora::API::PaymentResponse.new(
+      JSON.parse(
+        '{"id":"10000028","authorizing_merchant_id":300205948,"approved":"1","message_id":"1","message":"Approved","auth_code":"TEST","created":"2018-08-13T15:49:39","order_number":"9328570403","type":"PA","payment_method":"CC","risk_score":0.0,"amount":74.37,"custom":{"ref1":"","ref2":"","ref3":"","ref4":"","ref5":""},"card":{"card_type":"VI","last_four":"2333","address_match":1,"postal_result":1,"avs_result":"1","cvd_result":"1","avs":{"id":"Y","message":"Street address and Postal/ZIP match.","processed":true}},"links":[{"rel":"complete","href":"https://api.na.bambora.com/v1/payments/10000028/completions","method":"POST"}]}'
+      )
+    )
   end
 
   def failed_authorize_response
-    Response.new(false, 'Decline', params: {}, options: { error_code: '217', test: true})
+    Bambora::API::ErrorResponse.new(
+      JSON.parse('')
+    )
   end
 
   def successful_capture_response
+    Bambora::API::PaymentResponse.new(
+      JSON.parse(
+        '{"id":"10000029","authorizing_merchant_id":300205948,"approved":"1","message_id":"1","message":"Approved","auth_code":"TEST","created":"2018-08-13T15:49:39","order_number":"9328570403","type":"PAC","payment_method":"CC","risk_score":0.0,"amount":74.37,"custom":{"ref1":"","ref2":"","ref3":"","ref4":"","ref5":""},"card":{"card_type":"VI","address_match":0,"postal_result":0,"avs_result":"0","cvd_result":"1","cavv_result":"","avs":{"id":"U","message":"Address information is unavailable.","processed":false}},"links":[{"rel":"return","href":"https://api.na.bambora.com/v1/payments/10000029/returns","method":"POST"},{"rel":"complete","href":"https://api.na.bambora.com/v1/payments/10000029/completions","method":"POST"}]}'
+      )
+    )
   end
 
   def failed_capture_response
+    Bambora::API::ErrorResponse.new(
+      JSON.parse('')
+    )
   end
 
   def successful_refund_response
+    Bambora::API::PaymentResponse.new(
+      JSON.parse(
+        '{"id":"10000024","authorizing_merchant_id":300205948,"approved":"1","message_id":"1","message":"Approved","auth_code":"TEST","created":"2018-08-13T15:49:37","order_number":"8013982552","type":"R","payment_method":"CC","risk_score":0.0,"amount":10.00,"custom":{"ref1":"","ref2":"","ref3":"","ref4":"","ref5":""},"card":{"card_type":"VI","address_match":0,"postal_result":0,"avs_result":"0","cvd_result":"1","cavv_result":"","avs":{"id":"U","message":"Address information is unavailable.","processed":false}},"links":[{"rel":"void","href":"https://api.na.bambora.com/v1/payments/10000024/void","method":"POST"},{"rel":"return","href":"https://api.na.bambora.com/v1/payments/10000024/returns","method":"POST"}]}'
+      )
+    )
   end
 
   def failed_refund_response
+    Bambora::API::ErrorResponse.new(
+      JSON.parse('')
+    )
   end
 
   def successful_void_response
+    Bambora::API::PaymentResponse.new(
+      JSON.parse(
+        '{"id":"10000026","authorizing_merchant_id":300205948,"approved":"1","message_id":"1","message":"Approved","auth_code":"TEST","created":"2018-08-13T15:49:38","order_number":"8973946876","type":"VP","payment_method":"CC","risk_score":0.0,"amount":5.00,"custom":{"ref1":"","ref2":"","ref3":"","ref4":"","ref5":""},"card":{"card_type":"VI","address_match":0,"postal_result":0,"avs_result":"0","cvd_result":"1","cavv_result":"","avs":{"id":"U","message":"Address information is unavailable.","processed":false}}}'
+      )
+    )
   end
 
   def failed_void_response
+    Bambora::API::ErrorResponse.new(
+      JSON.parse('')
+    )
   end
 end
