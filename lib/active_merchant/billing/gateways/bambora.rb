@@ -14,7 +14,9 @@ module ActiveMerchant #:nodoc:
       self.display_name = 'Bambora'
 
       STANDARD_ERROR_CODE_MAPPING = {
-        '217' => STANDARD_ERROR_CODE[:card_declined]
+        '217' => STANDARD_ERROR_CODE[:card_declined],
+        '314' => STANDARD_ERROR_CODE[:processing_error],
+        '317' => STANDARD_ERROR_CODE[:call_issuer]
       }
 
       def initialize(options={})
@@ -27,7 +29,7 @@ module ActiveMerchant #:nodoc:
       def purchase(money, payment, options={})
         h = {
           order_number: options[:order_id],
-          amount: money * 100,
+          amount: money,
           payment_method: :card,
           customer_ip: options[:ip],
           card: {
@@ -64,7 +66,7 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.create(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: error_code_from(response) })
         else
           return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
@@ -110,7 +112,7 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.preauth(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: error_code_from(response) })
         else
           return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
@@ -124,7 +126,7 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.complete(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: error_code_from(response) })
         else
           return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
@@ -138,7 +140,7 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.return(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: error_code_from(response) })
         else
           return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
@@ -151,7 +153,7 @@ module ActiveMerchant #:nodoc:
 
         response = Payment.void(h)
         if response.is_a?(ErrorResponse)
-          return Response.new(false, response.message, response.to_h, { error_code: response.code })
+          return Response.new(false, response.message, response.to_h, { error_code: error_code_from(response) })
         else
           return Response.new(true, response.message, response.to_h, { authorization: response.id })
         end
@@ -173,6 +175,11 @@ module ActiveMerchant #:nodoc:
       end
 
       private
+
+      def error_code_from(response)
+        return nil if response.code.nil?
+        STANDARD_ERROR_CODE_MAPPING[response.code.to_s]
+      end
 
       # def commit(action, parameters)
       #   url = (test? ? test_url : live_url)

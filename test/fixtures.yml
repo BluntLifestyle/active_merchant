@@ -36,7 +36,6 @@ axcessms:
 balanced:
   login: 'e1c5ad38d1c711e1b36c026ba7e239a9'
 
-# Working credentials, no need to replace
 bambora:
   merchant_id: '300205948'
   payments_api_key: 'D5544E039FEc4cb9b8bEc18F69a04f40'
@@ -68,12 +67,12 @@ be2bill:
   password: your_test_password
 
 beanstream:
-  login: '300205948'
-  user: biximilien
-  password: Tfh045esf!
-  secure_profile_api_key: 1c1Ea110bd8F402a8aF2Bb3d0b32BD7b
-  recurring_api_key: 40b11f5789c94741AaC5636b47F9C302
-  api_key: D5544E039FEc4cb9b8bEc18F69a04f40
+  login: '123123123'
+  user: merchant_user
+  password: password
+  secure_profile_api_key: secret
+  recurring_api_key: secret
+  api_key: secret
 
 beanstream_interac:
   login: merchant id

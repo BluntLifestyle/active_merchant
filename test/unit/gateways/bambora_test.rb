@@ -72,7 +72,7 @@ class BamboraTest < Test::Unit::TestCase
     Bambora::API::Payment.expects(:preauth).returns(successful_authorize_response)
     response = @gateway.authorize(@amount, @credit_card, @options)
     assert_success response
-    assert_equal '10000021', response.authorization
+    assert_equal '10000028', response.authorization
     assert_equal 'Approved', response.message
 
     Bambora::API::Payment.expects(:complete).returns(failed_capture_response)
@@ -132,7 +132,7 @@ class BamboraTest < Test::Unit::TestCase
     Bambora::API::Payment.expects(:void).returns(failed_void_response)
     response = @gateway.void(@credit_card, @options)
     assert_failure response
-    assert_equal Gateway::STANDARD_ERROR_CODE[:card_declined], response.error_code
+    assert_equal Gateway::STANDARD_ERROR_CODE[:processing_error], response.error_code
   end
 
   def test_successful_verify
@@ -167,21 +167,21 @@ class BamboraTest < Test::Unit::TestCase
 
   private
 
-  def pre_scrubbed
-    %q(
-      Run the remote tests for this gateway, and then put the contents of transcript.log here.
-    )
-  end
-
-  def post_scrubbed
-    %q(
-      Put the scrubbed contents of transcript.log here after implementing your scrubbing function.
-      Things to scrub:
-        - Credit card number
-        - CVV
-        - Sensitive authentication details
-    )
-  end
+  # def pre_scrubbed
+  #   %q(
+  #     Run the remote tests for this gateway, and then put the contents of transcript.log here.
+  #   )
+  # end
+  #
+  # def post_scrubbed
+  #   %q(
+  #     Put the scrubbed contents of transcript.log here after implementing your scrubbing function.
+  #     Things to scrub:
+  #       - Credit card number
+  #       - CVV
+  #       - Sensitive authentication details
+  #   )
+  # end
 
   def successful_purchase_response
     Bambora::API::PaymentResponse.new(
@@ -251,7 +251,7 @@ class BamboraTest < Test::Unit::TestCase
 
   def failed_void_response
     Bambora::API::ErrorResponse.new(
-      JSON.parse('{}')
+      JSON.parse('{"code":314,"category":3,"message":"Missing or invalid payment information - Please validate all required payment information.","reference":"","details":[{"field":"adjId","message":"Invalid adjustment id"}]}')
     )
   end
 end
